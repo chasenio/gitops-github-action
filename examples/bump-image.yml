@@ -1,0 +1,39 @@
+name: Example - Bump Image
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: New image tag
+        required: true
+      image:
+        description: Image reference (e.g. ghcr.io/chasenio/api)
+        required: true
+      files:
+        description: File or glob (newline/comma separated)
+        required: true
+        default: apps/my-app/kustomization/dev/kustomization.yaml
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump image tag
+        id: bump
+        uses: chasenio/gitops-github-action@v1
+        with:
+          files: ${{ inputs.files }}
+          image: ${{ inputs.image }}
+          tag: ${{ inputs.tag }}
+          commit: "true"
+          commit-message: "chore(image): bump ${{ inputs.image }} to ${{ inputs.tag }}"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "changed=${{ steps.bump.outputs.changed }}"
+          echo "updated-files:"
+          echo "${{ steps.bump.outputs.updated-files }}"

@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+images:
+  - name: ghcr.io/chasenio/api
+    newName: ghcr.io/chasenio/api
+    newTag: "OLD_API"
+  - name: ghcr.io/chasenio/web
+    newName: ghcr.io/chasenio/web
+    newTag: "OLD_WEB"
+  - name: ghcr.io/chasenio/worker
+    newName: ghcr.io/chasenio/worker
+    newTag: "OLD_WORKER"

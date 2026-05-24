@@ -1,0 +1,9 @@
+# Helm values - nested / multi-image (main app + sidecar)
+image:
+  repository: ghcr.io/chasenio/app
+  tag: "OLD_APP"
+
+sidecar:
+  image:
+    repository: ghcr.io/chasenio/sidecar
+    tag: "OLD_SIDECAR"

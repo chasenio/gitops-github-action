@@ -1,0 +1,148 @@
+name: "Update Image Tag (Helm & Kustomize)"
+description: >-
+  Update container image tag (and optionally repository) inside Helm values.yaml
+  or Kustomize kustomization.yaml files. Supports single file, multiple files,
+  or a glob pattern. Optionally commits and pushes the change.
+author: "chasenio"
+branding:
+  icon: "refresh-cw"
+  color: "blue"
+
+inputs:
+  files:
+    description: "Path(s) or glob(s), newline/comma separated."
+    required: true
+  image:
+    description: "Image reference to match / use."
+    required: true
+  tag:
+    description: "New image tag."
+    required: true
+  mode:
+    description: "auto | kustomize | helm."
+    required: false
+    default: "auto"
+  new-name:
+    description: "Optional new image name (kustomize newName / helm repository)."
+    required: false
+    default: ""
+  helm-tag-path:
+    description: "yq path to tag field in Helm values."
+    required: false
+    default: ".image.tag"
+  helm-repository-path:
+    description: "yq path to repository field in Helm values."
+    required: false
+    default: ".image.repository"
+  update-repository:
+    description: "If true, also update repository/newName."
+    required: false
+    default: "false"
+  commit:
+    description: "If true, commit and push the change."
+    required: false
+    default: "false"
+  commit-message:
+    description: "Commit message. Default auto-generated."
+    required: false
+    default: ""
+  source-message:
+    description: "Source/upstream commit message to embed as the commit body (e.g. github.event.head_commit.message)."
+    required: false
+    default: ""
+  branch:
+    description: "Branch to push to. Default: current."
+    required: false
+    default: ""
+  git-user:
+    description: "Git author in 'Name <email>' form. Defaults to the workflow actor (github.actor)."
+    required: false
+    default: ""
+  yq-version:
+    description: "yq version to install when missing."
+    required: false
+    default: "v4.44.3"
+  repository:
+    description: "GitOps repo to checkout (owner/name). Empty = use already-checked-out repo."
+    required: false
+    default: ""
+  ref:
+    description: "Branch/ref to checkout in the GitOps repo."
+    required: false
+    default: ""
+  token:
+    description: "Token used to checkout & push the GitOps repo."
+    required: false
+    default: ""
+
+outputs:
+  updated-files:
+    description: "Newline-separated list of files that were actually changed."
+    value: ${{ steps.update.outputs.updated-files }}
+  changed:
+    description: "true if any file was changed."
+    value: ${{ steps.update.outputs.changed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout GitOps repo
+      if: ${{ inputs.repository != '' }}
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.ref }}
+        token: ${{ inputs.token }}
+
+    - name: Ensure yq is installed
+      shell: bash
+      run: |
+        set -euo pipefail
+        if command -v yq >/dev/null 2>&1; then
+          echo "yq already installed: $(yq --version)"; exit 0
+        fi
+        OS=$(uname | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m); case "$ARCH" in x86_64|amd64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; esac
+        sudo curl -fsSL "https://github.com/mikefarah/yq/releases/download/${{ inputs.yq-version }}/yq_${OS}_${ARCH}" -o /usr/local/bin/yq
+        sudo chmod +x /usr/local/bin/yq
+        yq --version
+
+    - name: Update image tag
+      id: update
+      shell: bash
+      run: |
+        set -euo pipefail
+        args=(
+          --files "${{ inputs.files }}"
+          --image "${{ inputs.image }}"
+          --tag   "${{ inputs.tag }}"
+          --mode  "${{ inputs.mode }}"
+          --new-name "${{ inputs.new-name }}"
+          --helm-tag-path "${{ inputs.helm-tag-path }}"
+          --helm-repository-path "${{ inputs.helm-repository-path }}"
+        )
+        if [ "${{ inputs.update-repository }}" = "true" ]; then
+          args+=( --update-repository )
+        fi
+        python3 "${{ github.action_path }}/main.py" update "${args[@]}"
+
+    - name: Commit & push
+      if: ${{ inputs.commit == 'true' && steps.update.outputs.changed == 'true' }}
+      shell: bash
+      env:
+        UPDATED: ${{ steps.update.outputs.updated-files }}
+        INPUT_GIT_USER: ${{ inputs.git-user }}
+        SOURCE_MESSAGE: ${{ inputs.source-message }}
+      run: |
+        set -euo pipefail
+        if [ -z "$INPUT_GIT_USER" ]; then
+          INPUT_GIT_USER="${GITHUB_ACTOR} <${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com>"
+        fi
+        python3 "${{ github.action_path }}/main.py" commit \
+          --files   "$UPDATED" \
+          --message "${{ inputs.commit-message }}" \
+          --source-message "$SOURCE_MESSAGE" \
+          --image   "${{ inputs.image }}" \
+          --tag     "${{ inputs.tag }}" \
+          --branch  "${{ inputs.branch }}" \
+          --git-user "$INPUT_GIT_USER"

@@ -1,0 +1,73 @@
+name: test
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install yq
+        run: |
+          sudo curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -o /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+      - name: Install pytest
+        run: pip install pytest
+      - name: Run unit tests
+        run: pytest -v tests/
+
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        case:
+          - name: kustomize-single
+            file: tests/fixtures/kustomize-single.yaml
+            image: ghcr.io/chasenio/api
+            assert: .images[0].newTag
+          - name: kustomize-multi-web
+            file: tests/fixtures/kustomize-multi.yaml
+            image: ghcr.io/chasenio/web
+            assert: .images[1].newTag
+          - name: helm-single
+            file: tests/fixtures/helm-single.yaml
+            image: ghcr.io/chasenio/svc
+            assert: .image.tag
+            mode: helm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump
+        uses: ./
+        with:
+          files: ${{ matrix.case.file }}
+          image: ${{ matrix.case.image }}
+          tag: CI_${{ matrix.case.name }}
+          mode: ${{ matrix.case.mode || 'auto' }}
+      - name: Assert
+        run: |
+          got=$(yq e '${{ matrix.case.assert }}' ${{ matrix.case.file }})
+          [ "$got" = "CI_${{ matrix.case.name }}" ] || { echo "expected CI_${{ matrix.case.name }} got $got"; exit 1; }
+
+  integration-glob:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: bump
+        uses: ./
+        with:
+          files: tests/fixtures/kustomize-*.yaml
+          image: ghcr.io/chasenio/api
+          tag: CI_GLOB
+      - name: Assert
+        run: |
+          set -e
+          [ "$(yq e '.images[0].newTag' tests/fixtures/kustomize-single.yaml)" = "CI_GLOB" ] || exit 1
+          [ "$(yq e '.images[0].newTag' tests/fixtures/kustomize-multi.yaml)"  = "CI_GLOB" ] || exit 1
+          [ "${{ steps.bump.outputs.changed }}" = "true" ] || exit 1

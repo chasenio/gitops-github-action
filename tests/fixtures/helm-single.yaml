@@ -1,0 +1,8 @@
+# Helm values - single image
+replicaCount: 1
+
+image:
+  repository: ghcr.io/chasenio/svc
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "OLD_SVC"
