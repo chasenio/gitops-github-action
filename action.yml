@@ -55,9 +55,9 @@ inputs:
     required: false
     default: ""
   git-user:
-    description: "Git author in 'Name <email>' form. Defaults to github-actions[bot]."
+    description: "Git author in 'Name <email>' form. Defaults to gitops[bot]."
     required: false
-    default: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+    default: "gitops[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
   yq-version:
     description: "yq version to install when missing."
     required: false
