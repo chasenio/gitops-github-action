@@ -55,9 +55,9 @@ inputs:
     required: false
     default: ""
   git-user:
-    description: "Git author in 'Name <email>' form. Defaults to the workflow actor (github.actor)."
+    description: "Git author in 'Name <email>' form. Defaults to github-actions[bot]."
     required: false
-    default: ""
+    default: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
   yq-version:
     description: "yq version to install when missing."
     required: false
@@ -131,13 +131,9 @@ runs:
       shell: bash
       env:
         UPDATED: ${{ steps.update.outputs.updated-files }}
-        INPUT_GIT_USER: ${{ inputs.git-user }}
         SOURCE_MESSAGE: ${{ inputs.source-message }}
       run: |
         set -euo pipefail
-        if [ -z "$INPUT_GIT_USER" ]; then
-          INPUT_GIT_USER="github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-        fi
         python3 "${{ github.action_path }}/main.py" commit \
           --files   "$UPDATED" \
           --message "${{ inputs.commit-message }}" \
@@ -145,4 +141,4 @@ runs:
           --image   "${{ inputs.image }}" \
           --tag     "${{ inputs.tag }}" \
           --branch  "${{ inputs.branch }}" \
-          --git-user "$INPUT_GIT_USER"
+          --git-user "${{ inputs.git-user }}"
