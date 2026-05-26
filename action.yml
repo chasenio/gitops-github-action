@@ -136,7 +136,7 @@ runs:
       run: |
         set -euo pipefail
         if [ -z "$INPUT_GIT_USER" ]; then
-          INPUT_GIT_USER="${GITHUB_ACTOR} <${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com>"
+          INPUT_GIT_USER="github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
         fi
         python3 "${{ github.action_path }}/main.py" commit \
           --files   "$UPDATED" \

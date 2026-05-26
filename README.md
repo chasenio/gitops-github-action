@@ -24,7 +24,7 @@ A composite GitHub Action that bumps a container image tag inside
 | `commit-message`       | no       | auto                       | Commit message subject. |
 | `source-message`       | no       | `""`                       | Source/upstream commit message; appended as commit body. |
 | `branch`               | no       | current                    | Branch to push to (created if missing). |
-| `git-user`             | no       | `${{ github.actor }} <id+actor@users.noreply.github.com>` | Git author in `Name <email>` form. Defaults to the workflow actor. |
+| `git-user`             | no       | `gitops[bot] <41898282+github-actions[bot]@users.noreply.github.com>` | Git author in `Name <email>` form. |
 | `yq-version`           | no       | `v4.44.3`                  | yq version to install if missing. |
 | `repository`           | no       | `""`                       | GitOps repo to checkout (`owner/name`). Empty = use already-checked-out repo. |
 | `ref`                  | no       | default                    | Branch/ref to checkout in the GitOps repo. |
