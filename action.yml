@@ -71,7 +71,7 @@ inputs:
     required: false
     default: ""
   token:
-    description: "Token used to checkout & push the GitOps repo."
+    description: "Token used to checkout & push the GitOps repo. Defaults to github.token when empty."
     required: false
     default: ""
 
@@ -92,7 +92,7 @@ runs:
       with:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
-        token: ${{ inputs.token }}
+        token: ${{ inputs.token || github.token }}
         allow-unsafe-pr-checkout: true
 
     - name: Ensure yq is installed

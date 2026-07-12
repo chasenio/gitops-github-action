@@ -28,7 +28,7 @@ A composite GitHub Action that bumps a container image tag inside
 | `yq-version`           | no       | `v4.44.3`                  | yq version to install if missing. |
 | `repository`           | no       | `""`                       | GitOps repo to checkout (`owner/name`). Empty = use already-checked-out repo. |
 | `ref`                  | no       | default                    | Branch/ref to checkout in the GitOps repo. |
-| `token`                | no       | -                          | Token to checkout & push the GitOps repo. Required when `repository` is set. |
+| `token`                | no       | `github.token`             | Token to checkout & push the GitOps repo. When empty, the action uses `github.token`. |
 
 ## Outputs
 
