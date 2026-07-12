@@ -93,6 +93,7 @@ runs:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
         token: ${{ inputs.token }}
+        allow-unsafe-pr-checkout: true
 
     - name: Ensure yq is installed
       shell: bash
